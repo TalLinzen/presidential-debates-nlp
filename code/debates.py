@@ -2,7 +2,7 @@ import csv
 import os
 import re
 
-header_re = re.compile(r'(?P<doc_id>\d+) of (?P<total_docs>\d+) DOCUMENTS\r+')
+header_re = re.compile(r'(?P<doc_id>\d+) of (?P<total_docs>\d+) DOCUMENTS\n+')
 fields = ['byline', 'section', 'length', 'dateline', 'load-date',
           'language', 'graphic', 'publication-type', 'acc-no',
           'journal-code', 'document-type']
@@ -17,7 +17,7 @@ class ArticleParser(object):
 
     def process_body(self, body):
         doc = {}
-        sections = body.split('\r\r')
+        sections = body.split('\n\n')
         doc['publication'] = sections[0]
         doc['date'] = sections[1]
         doc['title'] = sections[2]
@@ -36,8 +36,8 @@ class ArticleParser(object):
         return doc
 
     def process_file(self, filename, metadata={}):
-        self.raw = open(filename).read()
-        matches = re.split(header_re, self.raw)[1:]
+        raw = open(filename).read()
+        matches = re.split(header_re, raw)[1:]
         assert len(matches) % 3 == 0
         for i in range(0, len(matches), 3): 
             doc = metadata.copy()
@@ -53,7 +53,7 @@ class ArticleParser(object):
             writer.writerow([doc.get(field, '')[:100] for field in all_fields])
 
 
-dirname = os.path.expanduser('~/Dropbox/debates/data')
+dirname = os.path.expanduser('~/Dropbox/Debate Coding/data/txt')
 def process_all_presidential_debates(dirname):
     ap = ArticleParser()
     for filename in os.listdir(dirname):
