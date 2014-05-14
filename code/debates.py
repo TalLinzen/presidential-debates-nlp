@@ -35,6 +35,13 @@ class ArticleParser(object):
 
         return doc
 
+    def post_process_doc(self, doc):
+        '''
+        Hack to fix inconsistencies in presidential debate date
+        '''
+        if re.search(r'\d{4}', doc['date']) is None:
+            doc['date'], doc['title'] = doc['title'], doc['date']
+
     def process_file(self, filename, metadata={}):
         raw = open(filename).read()
         matches = re.split(header_re, raw)[1:]
@@ -43,9 +50,14 @@ class ArticleParser(object):
             doc = metadata.copy()
             doc['doc_id'], doc['total_docs'], body = matches[i:i+3]
             doc.update(self.process_body(body))
+            self.post_process_doc(doc)
             self.docs.append(doc)
 
-    def to_csv(self, filename='/tmp/tmp.csv'):
+    def alldoc_csv(self, filename='/tmp/tmp.csv'):
+        '''
+        Create a CSV file with all doc metadata and 100 first characters of 
+        each document
+        '''
         writer = csv.writer(open(filename, 'w'))
         all_fields = additional_fields + fields
         writer.writerow(all_fields)
