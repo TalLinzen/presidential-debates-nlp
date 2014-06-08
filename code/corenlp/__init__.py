@@ -371,10 +371,14 @@ def _parse_source(source, use_pos=True, use_lemma=True, use_ner=True,
                     if 'sentimentValue' in elem.attrib:
                         sentiment_val = float(elem.attrib['sentimentValue'])
                     
-                    sents.append(Sentence(_tokens, _parse,
-                                          _basic_deps, _collapsed_deps,
-                                          _collapsed_ccproc_deps, _sent_idx,
-                                          sentiment, sentiment_val))
+                    sent = Sentence(_tokens, _parse, _basic_deps,
+                                    _collapsed_deps, _collapsed_ccproc_deps,
+                                    _sent_idx, sentiment, sentiment_val)
+                    sents.append(sent)
+
+                    for token in _tokens:
+                        token.sent = sent
+
                     _tokens = []
                     _parse = None
                     _basic_deps = None
