@@ -2,7 +2,7 @@ import csv
 
 import corenlp
 
-parties = ['dem', 'rep', 'other']
+import data
 
 class DocAnnotation(object):
 
@@ -12,8 +12,8 @@ class DocAnnotation(object):
         self.year, self.debate, self.doc_id = year, debate, doc_id
 
     def find_candidate_mentions(self):
-        can = candidates[self.year]
-        self.candidate_mentions = {party: set() for party in parties}
+        can = data.candidates[self.year]
+        self.candidate_mentions = {party: set() for party in data.parties}
         for chain in self.doc.mention_chains:
             for party, name in can.items():
                 if any(name in t.lem for t in chain.mention_heads):
