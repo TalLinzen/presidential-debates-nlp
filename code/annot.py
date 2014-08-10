@@ -34,7 +34,7 @@ class DocAnnotation(object):
 
 
 def create_sentence_annot_files(d):
-    f = open(os.path.join(d, 'sent_annot', 'doc_list.csv'), 'rU')
+    f = open(os.path.join(d, 'for_annotation', 'doc_list.csv'), 'rU')
     reader = csv.DictReader(f)
     for rec in reader:
         try:
@@ -46,12 +46,12 @@ def create_sentence_annot_files(d):
             continue
         filename = '%s_%s_%03d' % (rec['year'], rec['debate'],
                                    int(rec['doc_id']))
-        out_filename = os.path.join(d, 'sent_annot', filename + '.csv')
+        out_filename = os.path.join(d, 'for_annotation', filename + '.csv')
         doc.sentences_csv_file(out_filename)
 
 
 def compare_all_annot_to_hand(d):
-    f = open(os.path.join(d, 'sent_annot', 'doc_list.csv'), 'rU')
+    f = open(os.path.join(d, 'for_annotation', 'doc_list.csv'), 'rU')
     reader = csv.DictReader(f)
     dicts = []
     for rec in reader:
@@ -83,4 +83,5 @@ def compare_all_annot_to_hand(d):
                 dicts.append(dic)
 
     columns = ['year', 'debate', 'doc_id', 'id', 'party', 'nlp', 'sentence']
-    return pd.DataFrame.from_records(dicts, columns=columns)
+    df = pd.DataFrame.from_records(dicts, columns=columns)
+    df.to_csv(os.path.join(d, 'annot_comparison.csv'))
