@@ -1,0 +1,23 @@
+\documentclass{article}
+
+\begin{document}
+
+<<libraries>>=
+library(plyr)
+library(ggplot2)
+@
+
+<<load>>=
+df <- read.csv('~/Dropbox/debates/data/annot_comparison.csv')
+@
+
+<<summary>>=
+summ <- ddply(df, .(year, party), summarise, 
+    precision=sum(nlp==TRUE & hand==TRUE) / sum(nlp==TRUE),
+    recall=sum(nlp==TRUE & hand==TRUE) / sum(hand==TRUE))
+summ <- transform(summ, f_score = 2 * precision * recall / (precision + recall))
+summ
+@
+
+
+\end{document}
