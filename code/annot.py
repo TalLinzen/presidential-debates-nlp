@@ -17,8 +17,10 @@ class DocAnnotation(object):
         can = data.candidates[self.year]
         self.candidate_mentions = {party: set() for party in data.parties}
         for chain in self.doc.mention_chains:
-            for party, name in can.items():
-                if any(name in t.lem for t in chain.mention_heads):
+            for party, names in can.items():
+                if any(name.lower() == t.lem.lower()
+                       for t in chain.mention_heads
+                       for name in names):
                     for t in chain.mention_heads:
                         self.candidate_mentions[party].add(t.sent)
 
@@ -74,7 +76,7 @@ def compare_all_annot_to_hand(d):
                           doc_id=rec['doc_id'],
                           sentence=hand_sent['sentence'],
                           id=hand_sent['id'])
-            for party in data.parties:
+            for party in data.candidates[int(rec['year'])].keys():
                 dic = shared.copy()
                 dic['party'] = party
                 nlp = 'T' if nlp_sent in doc.candidate_mentions[party] else 'F'
@@ -82,6 +84,8 @@ def compare_all_annot_to_hand(d):
                 dic['hand'] = hand_sent.get(party, 'N/A')
                 dicts.append(dic)
 
-    columns = ['year', 'debate', 'doc_id', 'id', 'party', 'nlp', 'sentence']
+    columns = ['year', 'debate', 'doc_id', 'id', 'party', 'hand', 'nlp',
+               'sentence']
     df = pd.DataFrame.from_records(dicts, columns=columns)
     df.to_csv(os.path.join(d, 'annot_comparison.csv'))
+    return df
