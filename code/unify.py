@@ -2,6 +2,7 @@ import csv
 import os
 import string
 
+import data
 from annot import DocAnnotation
 from article_parser import ArticleParser
 
@@ -25,18 +26,24 @@ def generate_bag_of_words(root, output_file='/tmp/debate_sentences.csv'):
         annot = DocAnnotation(corenlp_annot, year, debate, doc_id)
         
         parties = data.candidates[year].keys()
-        sents_by_party = {x: [] for x in parties}
+        all_types = parties + ['none', 'multiple']
+        sents_by_cand = {x: [] for x in all_types}
 
         for sent in annot.doc.sents:
             mentions = [party for party in parties 
                         if sent in annot.candidate_mentions[party]]
             # Only sentences that mention exactly one candidate
-            if len(mentions) == 1:
-                sents_by_party[mentions[0]].append(sent)
+            if len(mentions) == 0:
+                cand = 'none'
+            elif len(mentions) == 1:
+                cand = mentions[0]
+            else:
+                cand = 'multiple'
+            sents_by_cand[cand].append(sent)
 
-        for party in parties:
+        for cand in all_types:
             as_str = []
-            for sent in sents_by_party[party]:
+            for sent in sents_by_cand[cand]:
                 try:
                     as_str.append(str(sent))
                 except UnicodeEncodeError:
@@ -44,6 +51,6 @@ def generate_bag_of_words(root, output_file='/tmp/debate_sentences.csv'):
 
             text = ' '.join(as_str)
             values = [doc[field] for field in fields]
-            writer.writerow(values + [party, text])
+            writer.writerow(values + [cand, text])
 
     print '%d Unicode errors' % n_unicode_errors
