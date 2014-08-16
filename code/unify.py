@@ -19,6 +19,8 @@ def generate_bag_of_words(root, output_file='/tmp/debate_sentences.csv'):
     fields = ['year', 'debate_number', 'doc_id', 'publication']
     writer.writerow(fields + ['party', 'text'])
 
+    max_field_size = 30000
+
     n_unicode_errors = 0
     for doc in ap.docs:
         year, debate, doc_id = [int(doc[x]) for x in 
@@ -51,6 +53,9 @@ def generate_bag_of_words(root, output_file='/tmp/debate_sentences.csv'):
 
             text = ' '.join(as_str)
             values = [doc[field] for field in fields]
-            writer.writerow(values + [cand, text])
+            row = values + [cand]
+            for i in range(0, len(text), max_field_size):
+                row.append(text[i:i+max_field_size])
+            writer.writerow(row)
 
     print '%d Unicode errors' % n_unicode_errors
