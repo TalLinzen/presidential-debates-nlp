@@ -3,7 +3,10 @@ import os
 import re
 import subprocess
 
-header_re = re.compile(r'(?P<doc_id>\d+) of (?P<total_docs>\d+) DOCUMENTS\n+')
+import data
+from annot import DocAnnotation
+
+header_re = re.compile(r'(?P<doc_id>\d+) of (?P<total_docs>\d+) DOCUMENTS[\r\n]+')
 fields = ['byline', 'section', 'length', 'dateline', 'load-date',
           'language', 'graphic', 'publication-type', 'acc-no',
           'journal-code', 'document-type']
@@ -12,6 +15,17 @@ additional_fields = ['year', 'debate_number', 'doc_id', 'publication',
 
 
 class ArticleParser(object):
+    '''
+    ap = ArticleParser(os.path.expanduser('~/Dropbox/Debate Coding/data/txt'),
+                       os.path.expanduser('~/Dropbox/debates/data/corenlp_annot'),
+                       os.path.expanduser('~/Dropbox/debates/data/documents'),
+                       os.path.expanduser('~/Dropbox/debates/corenlp'), '3.3.1')
+    ap.load()
+    if CoreNLP hasn't been run yet:
+        ap.dump_to_dir()
+        ap.run_corenlp()
+    ap.final_output(output_filename)
+    '''
 
     def __init__(self, docs_dir, annotations_dir, doc_text_dir,
                  corenlp_dir, corenlp_version):
@@ -24,6 +38,7 @@ class ArticleParser(object):
 
     def process_body(self, body):
         doc = {}
+        body = body.replace('\r\n', '\n')
         sections = body.split('\n\n')
         doc['publication'] = sections[0]
         doc['date'] = sections[1]
@@ -109,7 +124,7 @@ class ArticleParser(object):
         for doc in self.docs:
             writer.writerow([doc.get(field, '')[:100] for field in all_fields])
 
-    def process_all(self):
+    def load(self):
         for filename in os.listdir(self.docs_dir):
             if filename[0] == '.':
                 continue
@@ -117,3 +132,49 @@ class ArticleParser(object):
             year, _, _, debate_number = base.split()
             self.process_file(os.path.join(self.docs_dir, filename), 
                               {'year': year, 'debate_number': debate_number})
+
+    def final_output(self, output_file='/tmp/debate_sentences.csv'):
+        writer = csv.writer(open(output_file, 'w'))
+        fields = ['year', 'debate_number', 'doc_id', 'publication', 'byline']
+        writer.writerow(fields + ['party', 'text'])
+
+        max_field_size = 30000
+
+        n_unicode_errors = 0
+        for doc in self.docs:
+            year, debate, doc_id = [int(doc[x]) for x in 
+                                    ['year', 'debate_number', 'doc_id']]
+            annot = DocAnnotation(self.annotations_dir, year, debate, doc_id)
+            
+            parties = data.candidates[year].keys()
+            all_types = parties + ['none', 'multiple']
+            sents_by_cand = {x: [] for x in all_types}
+
+            for sent in annot.doc.sents:
+                mentions = [party for party in parties 
+                            if sent in annot.candidate_mentions[party]]
+                # Only sentences that mention exactly one candidate
+                if len(mentions) == 0:
+                    cand = 'none'
+                elif len(mentions) == 1:
+                    cand = mentions[0]
+                else:
+                    cand = 'multiple'
+                sents_by_cand[cand].append(sent)
+
+            for cand in all_types:
+                as_str = []
+                for sent in sents_by_cand[cand]:
+                    try:
+                        as_str.append(str(sent))
+                    except UnicodeEncodeError:
+                        n_unicode_errors += 1
+
+                text = ' '.join(as_str)
+                values = [doc.get(field, 'n/a') for field in fields]
+                row = values + [cand]
+                for i in range(0, len(text), max_field_size):
+                    row.append(text[i:i+max_field_size])
+                writer.writerow(row)
+
+        print '%d Unicode errors' % n_unicode_errors

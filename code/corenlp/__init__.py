@@ -326,7 +326,7 @@ def _parse_source(source, use_pos=True, use_lemma=True, use_ner=True,
 
             # Recover Parse Tree here.
             elif elem.tag == 'parse' and use_parse:
-                _parse = nltk.tree.Tree(unicode(elem.text))
+                _parse = nltk.tree.Tree.fromstring(unicode(elem.text))
 
             # Recover dependencies here.
             elif elem.tag == 'governor' and _current_deps is not None:

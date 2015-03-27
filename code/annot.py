@@ -1,7 +1,6 @@
 import csv
 import os
 
-import pandas as pd
 import corenlp
 
 import data
@@ -54,6 +53,7 @@ def create_sentence_annot_files(d):
 
 
 def compare_all_annot_to_hand(d):
+    import pandas as pd
     f = open(os.path.join(d, 'for_annotation', 'doc_list.csv'), 'rU')
     reader = csv.DictReader(f)
     dicts = []
